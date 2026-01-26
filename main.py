@@ -43,6 +43,13 @@ class UserCreate(BaseModel):
     last_name: str
     email: str
 
+#UPDATING FIRST NAME AND LAST NAME
+class UpdateFirstName(BaseModel):
+    first_name: str
+
+class UpdateLastName(BaseModel):
+    last_name: str
+
 
 #To connect to database and verify setup
 @app.get("/")
@@ -87,3 +94,36 @@ def get_user(username: str, db: Session = Depends(get_db)):
         "email": user.email
     }
 
+#PUT METHOD---UPDATE FIRST NAME
+@app.put("/users/{username}/first-name")
+def update_first_name(
+    username: str,
+    data: UpdateFirstName,
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.username == username).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.first_name = data.first_name
+    db.commit()
+
+    return {"message": "First name updated successfully"}
+
+#PUT METHOD---UPDATE LAST NAME
+@app.put("/users/{username}/last-name")
+def update_last_name(
+    username: str,
+    data: UpdateLastName,
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.username == username).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.last_name = data.last_name
+    db.commit()
+
+    return {"message": "Last name updated successfully"}

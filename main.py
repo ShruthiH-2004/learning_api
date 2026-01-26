@@ -9,7 +9,7 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 
 app = FastAPI()
-
+#CHECKING FASTAPI SETUP
 # @app.get("/")
 # def read_root():
 #     return {"message": "FastAPI is running"}
@@ -19,9 +19,16 @@ app = FastAPI()
 # def say_hello():
 #     return {"message": "Hello from FastAPI!"}
 
+#CHECKING FASTAPI WITH SQLITE SETUP
+# def read_root():
+#     return {"message": "FastAPI with SQLite is running"}
+
+#CREATE DATABASE TABLES
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
 
+
+#POST TO CREATE A USER
 # Get DB session
 def get_db():
     db = SessionLocal()
@@ -64,6 +71,19 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         "user_id": new_user.id
     }
 
+#GET METHOD---RETRIEVE A USER
+@app.get("/users/{username}")
+def get_user(username: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == username).first()
 
-def read_root():
-    return {"message": "FastAPI with SQLite is running"}
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {
+        "id": user.id,
+        "username": user.username,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email
+    }
+

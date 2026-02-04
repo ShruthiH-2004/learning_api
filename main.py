@@ -50,10 +50,7 @@ class UpdateFirstName(BaseModel):
 class UpdateLastName(BaseModel):
     last_name: str
 
-
-#To connect to database and verify setup
-@app.get("/")
-
+#@app.get("/")
 
 @app.post("/users")
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
@@ -79,6 +76,8 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     }
 
 #GET METHOD---RETRIEVE A USER
+#To connect to database and verify setup
+
 @app.get("/users/{username}")
 def get_user(username: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == username).first()

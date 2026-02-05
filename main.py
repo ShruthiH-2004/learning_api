@@ -8,7 +8,15 @@ from models import User
 from fastapi import HTTPException
 from pydantic import BaseModel
 from schemas import UserCreate
+from passlib.context import CryptContext
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(password: str):
+    return pwd_context.hash(password)
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
 
 app = FastAPI()
 from fastapi.middleware.cors import CORSMiddleware
@@ -70,12 +78,15 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.username == user.username).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already exists")
+    
+    hashed_pwd = hash_password(user.password)
 
     new_user = User(
         username=user.username,
         first_name=user.first_name,
         last_name=user.last_name,
-        email=user.email
+        email=user.email,
+        password_hash=hashed_pwd
     )
 
     db.add(new_user)

@@ -5,3 +5,4 @@ class UserCreate(BaseModel):
     first_name: str = Field(..., min_length=1)
     last_name: str = Field(..., min_length=1)
     email: EmailStr
+    password: str = Field(..., min_length=6) 

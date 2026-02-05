@@ -7,8 +7,20 @@ from database import SessionLocal
 from models import User
 from fastapi import HTTPException
 from pydantic import BaseModel
+from schemas import UserCreate
+
 
 app = FastAPI()
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # OK for development
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 #CHECKING FASTAPI SETUP
 # @app.get("/")
 # def read_root():

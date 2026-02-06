@@ -9,17 +9,32 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 from schemas import UserCreate
 from passlib.context import CryptContext
+from fastapi.middleware.cors import CORSMiddleware
+from auth import hash_password, verify_password
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def hash_password(password: str):
-    return pwd_context.hash(password)
-
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
 
 app = FastAPI()
-from fastapi.middleware.cors import CORSMiddleware
+
+def root():
+    return {"message": "Backend is running"}
+
+models.Base.metadata.create_all(bind=engine)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# def hash_password(password: str):
+#     return pwd_context.hash(password)
+
+# def verify_password(plain_password, hashed_password):
+#     return pwd_context.verify(plain_password, hashed_password)
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,7 +43,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 #CHECKING FASTAPI SETUP
 # @app.get("/")
 # def read_root():
@@ -43,35 +57,13 @@ app.add_middleware(
 # def read_root():
 #     return {"message": "FastAPI with SQLite is running"}
 
-#CREATE DATABASE TABLES
-# Create database tables
-models.Base.metadata.create_all(bind=engine)
-
-
-#POST TO CREATE A USER
-# Get DB session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 class UserCreate(BaseModel):
     username: str
     first_name: str
     last_name: str
     email: str
-
-#UPDATING FIRST NAME AND LAST NAME
-class UpdateFirstName(BaseModel):
-    first_name: str
-
-class UpdateLastName(BaseModel):
-    last_name: str
-
-#@app.get("/")
-
+    # password: str
+#OLD
 @app.post("/users")
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     # check if username already exists
@@ -79,14 +71,14 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already exists")
     
-    hashed_pwd = hash_password(user.password)
+    # hashed_pwd = hash_password(user.password)
 
     new_user = User(
         username=user.username,
         first_name=user.first_name,
         last_name=user.last_name,
         email=user.email,
-        password_hash=hashed_pwd
+        # password_hash=hashed_pwd
     )
 
     db.add(new_user)
@@ -98,9 +90,52 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         "user_id": new_user.id
     }
 
-#GET METHOD---RETRIEVE A USER
-#To connect to database and verify setup
+# #POST: Create new account (Signup)
+# @app.post("/signup")
+# def signup(user: UserCreate, db: Session = Depends(get_db)):
 
+#     existing_user = db.query(models.User).filter(
+#         (models.User.username == user.username) |
+#         (models.User.email == user.email)
+#     ).first()
+
+#     if existing_user:
+#         raise HTTPException(status_code=400, detail="User already exists")
+
+#     new_user = models.User(
+#         username=user.username,
+#         first_name=user.first_name,
+#         last_name=user.last_name,
+#         email=user.email,
+#         password_hash=hash_password(user.password)
+#     )
+
+#     db.add(new_user)
+#     db.commit()
+
+#     return {"message": "User created successfully"}
+
+# #POST: Sign in (existing users only)
+# @app.post("/signin")
+# def signin(data: UserLogin, db: Session = Depends(get_db)):
+
+#     user = db.query(models.User).filter(
+#         models.User.email == data.email
+#     ).first()
+
+#     if not user or not verify_password(data.password, user.password_hash):
+#         raise HTTPException(status_code=401, detail="Invalid credentials")
+
+#     return {
+#         "username": user.username,
+#         "first_name": user.first_name,
+#         "last_name": user.last_name,
+#         "email": user.email
+#     }
+
+
+# GET METHOD---RETRIEVE A USER
+# To connect to database and verify setup
 @app.get("/users/{username}")
 def get_user(username: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == username).first()
@@ -115,6 +150,32 @@ def get_user(username: str, db: Session = Depends(get_db)):
         "last_name": user.last_name,
         "email": user.email
     }
+# #GET: Profile
+# @app.get("/profile/{username}")
+# def get_profile(username: str, db: Session = Depends(get_db)):
+
+#     user = db.query(models.User).filter(
+#         models.User.username == username
+#     ).first()
+
+#     if not user:
+#         raise HTTPException(status_code=404, detail="User not found")
+
+#     return {
+#         "username": user.username,
+#         "first_name": user.first_name,
+#         "last_name": user.last_name,
+#         "email": user.email
+#     }
+
+
+
+#UPDATING FIRST NAME AND LAST NAME
+class UpdateFirstName(BaseModel):
+    first_name: str
+
+class UpdateLastName(BaseModel):
+    last_name: str
 
 #PUT METHOD---UPDATE FIRST NAME
 @app.put("/users/{username}/first-name")
@@ -163,4 +224,20 @@ def delete_user(username: str, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "User deleted successfully"}
+
+
+# @app.delete("/delete/{username}")
+# def delete_user(username: str, db: Session = Depends(get_db)):
+
+#     user = db.query(models.User).filter(
+#         models.User.username == username
+#     ).first()
+
+#     if not user:
+#         raise HTTPException(status_code=404, detail="User not found")
+
+#     db.delete(user)
+#     db.commit()
+
+#     return {"message": "User deleted successfully"}
 
